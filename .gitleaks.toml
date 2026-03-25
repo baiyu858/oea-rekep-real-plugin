@@ -1,0 +1,17 @@
+title = "oea-rekep-real-plugin gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore vendored third-party runtime code and binary assets"
+paths = [
+  '''^runtime/third_party/''',
+  '''^runtime/media/''',
+]
+
+[[allowlists]]
+description = "Ignore upstream placeholder documentation"
+paths = [
+  '''^runtime/README_upstream_rekep\.md$''',
+]

@@ -56,6 +56,38 @@ After installation, start OEA with the external driver:
 python hal/hal_watchdog.py --driver rekep_real --workspace ~/.OEA/workspace
 ```
 
+## Local Secret Scanning
+
+Install the development tooling:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+Enable commit-time checks:
+
+```bash
+pre-commit install
+```
+
+Run the configured hooks on the current working tree:
+
+```bash
+pre-commit run --all-files
+```
+
+Run a full git-history secret scan:
+
+```bash
+./scripts/scan_secrets.sh
+```
+
+The repository includes:
+
+- `.pre-commit-config.yaml` for local commit-time protection
+- `.gitleaks.toml` for repository-specific gitleaks settings
+- `scripts/scan_secrets.sh` for a manual full-history scan
+
 ## Quick Start
 
 Run a preflight check:

@@ -56,6 +56,38 @@ python scripts/deploy_rekep_real_plugin.py \
 python hal/hal_watchdog.py --driver rekep_real --workspace ~/.OEA/workspace
 ```
 
+## 本地泄密扫描
+
+先安装开发依赖：
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+启用提交前检查：
+
+```bash
+pre-commit install
+```
+
+对当前工作区执行一次完整 hook 扫描：
+
+```bash
+pre-commit run --all-files
+```
+
+对整个 git 历史执行一次手动泄密扫描：
+
+```bash
+./scripts/scan_secrets.sh
+```
+
+仓库里已经包含：
+
+- `.pre-commit-config.yaml`：本地提交前保护
+- `.gitleaks.toml`：仓库级 gitleaks 配置
+- `scripts/scan_secrets.sh`：整仓历史扫描脚本
+
 ## 快速开始
 
 执行预检：
