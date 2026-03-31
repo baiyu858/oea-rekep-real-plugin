@@ -61,9 +61,29 @@ def _create_cellbot_adapter(
     )
 
 
+def _create_franky_adapter(
+    *,
+    driver: str,
+    host: str | None,
+    port: int | None,
+    profile: HardwareProfile | None = None,
+    **_kwargs: Any,
+) -> RobotAdapter:
+    from franky_adapter import FrankyAdapter
+
+    extras = profile.extras if isinstance(profile, HardwareProfile) else {}
+    return FrankyAdapter(
+        host=host or "172.16.0.2",
+        port=port,
+        driver=driver or "franky_ip",
+        extras=extras if isinstance(extras, dict) else None,
+    )
+
+
 _ADAPTER_FACTORIES: dict[str, AdapterFactory] = {
     "dobot": _create_dobot_adapter,
     "cellbot": _create_cellbot_adapter,
+    "franky": _create_franky_adapter,
 }
 
 
