@@ -2991,7 +2991,7 @@ def _run_execute_rekep_vlm_stage_task(args, state_dir, preflight):
 
     from robot_factory import create_robot_adapter
 
-    adapter = create_robot_adapter(hardware_profile=hardware_profile)
+    adapter = create_robot_adapter(hardware_profile=hardware_profile, robot_family=None)
     connection_info = adapter.connect()
     stage_results = []
     execution_error = None
@@ -3294,7 +3294,7 @@ def _run_execute_rekep_solver_task(args, state_dir, preflight):
 
     from robot_factory import create_robot_adapter
 
-    adapter = create_robot_adapter(hardware_profile=hardware_profile)
+    adapter = create_robot_adapter(hardware_profile=hardware_profile, robot_family=None)
     connection_info = adapter.connect()
     try:
         solver_result = execute_solver_program(
@@ -3447,7 +3447,7 @@ def run_execute(args):
 
     from robot_factory import create_robot_adapter
 
-    adapter = create_robot_adapter(hardware_profile=hardware_profile)
+    adapter = create_robot_adapter(hardware_profile=hardware_profile, robot_family=None)
     connection_info = adapter.connect()
     try:
         execution_records, execution_error = _execute_action_list(
