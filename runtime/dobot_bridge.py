@@ -490,6 +490,28 @@ def parse_realsense_source(camera_source):
     return {"enabled": False, "serial": None}
 
 
+def parse_orbbec_source(camera_source):
+    """Parse Orbbec camera source string.
+
+    Supported formats:
+    - "orbbec" / "orbbec_v6" - use default Orbbec camera
+    - "orbbec:0" - use first Orbbec device
+    - "orbbec:1" - use second Orbbec device
+    """
+    value = str(camera_source).strip()
+    lowered = value.lower()
+    if lowered in {"orbbec", "orbbec_v6", "astra", "gemini"}:
+        return {"enabled": True, "index": 0}
+    if lowered.startswith("orbbec:"):
+        index_str = value.split(":", 1)[1].strip()
+        try:
+            index = int(index_str)
+            return {"enabled": True, "index": index}
+        except ValueError:
+            return {"enabled": False, "index": None}
+    return {"enabled": False, "index": None}
+
+
 def parse_realsense_zmq_source(camera_source):
     value = str(camera_source).strip()
     lowered = value.lower()
@@ -712,13 +734,93 @@ def load_realsense_intrinsics(calib_dir, serial):
     }
 
 
+def load_orbbec_intrinsics(calib_dir):
+    """Load Orbbec camera intrinsics from calibration directory.
+
+    Orbbec intrinsics can come from:
+    1. A specific calibration JSON file (orbbec_calibration_<serial>_latest.json)
+    2. Template file if no specific calibration exists
+
+    Returns:
+        dict with color and depth intrinsics, or None if not found
+    """
+    if not calib_dir or not Path(calib_dir).exists():
+        return None
+
+    calib_dir = Path(calib_dir)
+
+    # Try to find specific calibration file
+    calib_files = list(calib_dir.glob("orbbec_calibration_*_latest.json"))
+    if calib_files:
+        calib_file = calib_files[0]
+    else:
+        # Try template
+        calib_file = calib_dir / "orbbec_calibration_template.json"
+
+    if not calib_file.exists():
+        return None
+
+    try:
+        payload = json.loads(calib_file.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    color = payload.get("color_intrinsics", {}) if isinstance(payload, dict) else {}
+    depth = payload.get("depth_intrinsics", {}) if isinstance(payload, dict) else {}
+
+    return {
+        "serial": payload.get("device_info", {}).get("serial_number", "unknown"),
+        "source": str(calib_file),
+        "color": {
+            "width": color.get("width", 1280),
+            "height": color.get("height", 720),
+            "fx": color.get("fx", 0.0),
+            "fy": color.get("fy", 0.0),
+            "cx": color.get("ppx", 0.0),
+            "cy": color.get("ppy", 0.0),
+            "distortion_model": color.get("distortion_model") or color.get("model", "brown_conrady"),
+            "distortion_coeffs": color.get("coeffs", [0.0, 0.0, 0.0, 0.0, 0.0]),
+        },
+        "depth": {
+            "width": depth.get("width", 640),
+            "height": depth.get("height", 576),
+            "fx": depth.get("fx", 0.0),
+            "fy": depth.get("fy", 0.0),
+            "cx": depth.get("ppx", 0.0),
+            "cy": depth.get("ppy", 0.0),
+            "distortion_model": depth.get("distortion_model") or depth.get("model", "brown_conrady"),
+            "distortion_coeffs": depth.get("coeffs", [0.0, 0.0, 0.0, 0.0, 0.0]),
+            "depth_scale": payload.get("depth_scale", 0.001),
+        },
+    }
+
+
 def resolve_real_camera_calibration(args, camera_source):
     settings_ini_path = resolve_dobot_settings_ini(args)
     script_path = resolve_camera_extrinsic_script(args)
     calib_dir = resolve_realsense_calib_dir(args)
     profile_name = resolve_camera_profile(args)
     serial_map = load_camera_serial_map(settings_ini_path)
-    source_serial = parse_realsense_source(camera_source).get("serial")
+
+    # Determine camera type and use appropriate parser
+    orbbec_parsed = parse_orbbec_source(camera_source)
+    realsense_parsed = parse_realsense_source(camera_source)
+    zmq_parsed = parse_realsense_zmq_source(camera_source)
+
+    is_orbbec = orbbec_parsed.get("enabled", False)
+    is_realsense = realsense_parsed.get("enabled", False)
+    is_zmq = zmq_parsed.get("enabled", False)
+
+    # Get serial based on camera type
+    source_serial = None
+    if is_orbbec:
+        # Orbbec: use serial from args or leave empty (intrinsics from hardware)
+        source_serial = None
+    elif is_realsense:
+        source_serial = realsense_parsed.get("serial")
+    elif is_zmq:
+        source_serial = None  # ZMQ streams don't have fixed serial
+
     requested_serial = resolve_camera_serial(args)
 
     serial = ""
@@ -732,7 +834,17 @@ def resolve_real_camera_calibration(args, camera_source):
     extrinsic = load_camera_extrinsic_profile(script_path, profile_name)
     if not serial and isinstance(extrinsic, dict):
         serial = str(extrinsic.get("serial", "")).strip()
-    intrinsics = load_realsense_intrinsics(calib_dir, serial)
+
+    # Use different intrinsics loading based on camera type
+    if is_orbbec:
+        # Orbbec: load from orbbec_config directory
+        orbbec_calib_dir = Path(__file__).parent / "real_calibration" / "orbbec_config"
+        intrinsics = load_orbbec_intrinsics(orbbec_calib_dir)
+        # Use Orbbec calibration dir in output
+        calib_dir = orbbec_calib_dir
+    else:
+        # RealSense: load from realsense_config directory
+        intrinsics = load_realsense_intrinsics(calib_dir, serial)
 
     warnings = []
     if not settings_ini_path.exists():
@@ -742,21 +854,22 @@ def resolve_real_camera_calibration(args, camera_source):
     if extrinsic is None:
         warnings.append(f"extrinsic profile not found in script: {profile_name}")
     if not calib_dir.exists():
-        warnings.append(f"realsense calibration dir not found: {calib_dir}")
-    elif not intrinsics:
+        warnings.append(f"camera calibration dir not found: {calib_dir}")
+    elif not intrinsics and not is_orbbec:
         warnings.append(f"intrinsics file not found for serial {serial or 'unknown'} in {calib_dir}")
 
     return {
         "profile": profile_name,
         "serial": serial,
         "camera_source": str(camera_source),
+        "camera_type": "orbbec" if is_orbbec else "realsense",
         "settings_ini_path": str(settings_ini_path),
         "camera_extrinsic_script_path": str(script_path),
         "realsense_calib_dir": str(calib_dir),
         "serial_map": serial_map,
         "extrinsic": extrinsic,
         "intrinsic": intrinsics,
-        "configured": bool(extrinsic) and bool(intrinsics),
+        "configured": bool(extrinsic) and (bool(intrinsics) or is_orbbec),
         "warnings": warnings,
     }
 
@@ -1103,6 +1216,84 @@ def capture_realsense_rgbd(camera_source, warmup_frames=6, timeout_s=8.0):
             pipeline.stop()
         except Exception:
             pass
+
+
+def capture_orbbec_rgbd(camera_source, warmup_frames=6, timeout_s=8.0):
+    """Capture RGB-D frame from Orbbec camera.
+
+    Args:
+        camera_source: "orbbec" or "orbbec:0" etc.
+        warmup_frames: Number of frames to skip for auto-exposure stabilization
+        timeout_s: Maximum wait time for frame capture
+
+    Returns:
+        Tuple of (rgb: np.ndarray, depth: np.ndarray, capture_info: dict)
+    """
+    try:
+        from orbbec_camera_v6 import OrbbecCamera
+    except Exception as exc:
+        raise RuntimeError(f"pyorbbecsdk and orbbec_camera_v6 are required for Orbbec RGB-D capture: {exc}") from exc
+
+    source = parse_orbbec_source(camera_source)
+    if not source["enabled"]:
+        raise RuntimeError(f"capture_orbbec_rgbd only supports Orbbec sources, got: {camera_source}")
+
+    camera = None
+    try:
+        # Initialize Orbbec camera with default settings
+        camera = OrbbecCamera(
+            color_width=1280,
+            color_height=720,
+            color_fps=30,
+            depth_width=640,
+            depth_height=576,
+            depth_fps=30,
+            enable_alignment=True,
+            enable_depth=True,
+            depth_scale=0.001,
+        )
+
+        # Wait for camera to warm up
+        time.sleep(1.0)
+
+        # Skip warmup frames
+        for _ in range(warmup_frames):
+            try:
+                camera.get_frames()
+            except Exception:
+                pass
+
+        # Capture frame
+        color_frame, depth_frame = camera.get_frames()
+        bgr_image, depth_image_mm = camera.get_images_from_frames(color_frame, depth_frame)
+
+        # Convert BGR to RGB (ReKep expects RGB)
+        rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
+
+        # Convert depth from mm to meters (float)
+        depth_image = depth_image_mm.astype(np.float32) * 0.001
+
+        # Get intrinsics for capture_info
+        color_intrinsics = camera.get_color_intrinsics()
+        depth_intrinsics = camera.get_depth_intrinsics()
+
+        capture_info = {
+            "source": str(camera_source),
+            "camera_type": "orbbec_rgbd",
+            "depth_scale": 0.001,
+            "color_intrinsics": color_intrinsics,
+            "depth_intrinsics": depth_intrinsics,
+            "width": color_intrinsics.get("width", 1280),
+            "height": color_intrinsics.get("height", 720),
+        }
+
+        return rgb_image, depth_image, capture_info
+    finally:
+        if camera is not None:
+            try:
+                camera.stop()
+            except Exception:
+                pass
 
 
 

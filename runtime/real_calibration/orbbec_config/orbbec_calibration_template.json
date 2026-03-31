@@ -1,0 +1,57 @@
+{
+  "device_info": {
+    "serial_number": "ORBBEC_SERIAL_PLACEHOLDER",
+    "name": "Orbbec Camera",
+    "model": "Orbbec Astra/Gemini",
+    "product_line": "Orbbec"
+  },
+  "timestamp": "",
+  "color_intrinsics": {
+    "width": 1280,
+    "height": 720,
+    "ppx": 0.0,
+    "ppy": 0.0,
+    "fx": 0.0,
+    "fy": 0.0,
+    "model": "brown_conrady",
+    "coeffs": [0.0, 0.0, 0.0, 0.0, 0.0],
+    "distortion_model": "brown_conrady"
+  },
+  "depth_intrinsics": {
+    "width": 640,
+    "height": 576,
+    "ppx": 0.0,
+    "ppy": 0.0,
+    "fx": 0.0,
+    "fy": 0.0,
+    "model": "brown_conrady",
+    "coeffs": [0.0, 0.0, 0.0, 0.0, 0.0],
+    "distortion_model": "brown_conrady"
+  },
+  "depth_scale": 0.001,
+  "extrinsics": {
+    "rotation": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+    "translation": [0.0, 0.0, 0.0],
+    "transform_matrix": [
+      [1.0, 0.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0, 0.0],
+      [0.0, 0.0, 1.0, 0.0],
+      [0.0, 0.0, 0.0, 1.0]
+    ]
+  },
+  "stream_config": {
+    "color": {
+      "width": 1280,
+      "height": 720,
+      "format": "mjpg",
+      "fps": 30
+    },
+    "depth": {
+      "width": 640,
+      "height": 576,
+      "format": "y16",
+      "fps": 30
+    }
+  },
+  "notes": "This is a template. Run camera calibration to populate actual values. Orbbec intrinsics are automatically read from hardware, but extrinsics (T_base_camera) need to be calibrated."
+}
