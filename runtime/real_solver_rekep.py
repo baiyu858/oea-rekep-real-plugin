@@ -804,8 +804,8 @@ def execute_solver_program(
             print(f"[rekep-solver][stage={stage}] 准备抓取物体: obj {obj_id} (keypoint {grasp_keypoint})")
         if is_release_stage:
             release_keypoint = int(stage_info.get("release_keypoint", -1))
-            obj_id = int(ctx.rigid_group_ids[release_keypoint]) if release_keypoint < len(ctx.rigid_group_ids) else -1
-            print(f"[rekep-solver][stage={stage}] 准备释放到物体: obj {obj_id} (keypoint {release_keypoint})")
+            target_obj_id = int(ctx.rigid_group_ids[release_keypoint]) if release_keypoint < len(ctx.rigid_group_ids) else -1
+            print(f"[rekep-solver][stage={stage}] 释放目标物体: obj {target_obj_id} (keypoint {release_keypoint})")
 
         full_keypoints = ctx.full_keypoints()
         movable_mask = ctx.movable_mask()
