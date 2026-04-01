@@ -60,6 +60,17 @@ class FrankyAdapter(RobotAdapter):
         self._gripper = None
         self._connected = False
 
+    def recover_from_errors(self) -> Dict[str, Any]:
+        """Attempt to recover from robot errors. Returns status dict."""
+        if self._robot is None or not self._connected:
+            return {"ok": False, "error": "Robot not connected"}
+        try:
+            self._robot.recover_from_errors()
+            self._faulted = False
+            return {"ok": True, "recovered": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def get_runtime_state(self) -> Dict[str, Any]:
         state = {
             "source": self.driver,
@@ -147,6 +158,7 @@ class FrankyAdapter(RobotAdapter):
                 "dry_run": False,
             }
         except Exception as e:
+            self._faulted = True
             return {
                 "ok": False,
                 "driver": self.driver,
