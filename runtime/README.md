@@ -1,6 +1,6 @@
-# ReKep Real Runtime for OpenEmbodiedAgent
+# ReKep Real Runtime for PhyAgentOS
 
-本目录提供插件仓库内的真机 ReKep 运行时（来源于 `~/model/clawkep/ReKep` 的迁移版），并将真机所需第三方代码统一收敛到 `runtime/third_party/`，用于作为 **OpenEmbodiedAgent** 的外部 HAL 插件发布。
+本目录提供插件仓库内的真机 ReKep 运行时（来源于 `~/model/clawkep/ReKep` 的迁移版），并将真机所需第三方代码统一收敛到 `runtime/third_party/`，用于作为 **PhyAgentOS** 的外部 HAL 插件发布。
 
 ## 1. 目录结构
 
@@ -11,13 +11,14 @@
 - `third_party/dobot_xtrainer_remote/`：ZMQ 远端机器人/相机服务相关代码（最小必要集）
 - `README_upstream_rekep.md`：上游 ReKep 原始说明（迁移前）
 
-## 2. 在 OEA 框架中的集成点
+## 2. 在 PhyAgentOS 框架中的集成点
 
 本插件提供 `HAL` 驱动：`rekep_real`
 
-- 驱动文件：`oea_rekep_real_plugin/driver.py`
-- 档案文件：`oea_rekep_real_plugin/profiles/rekep_real.md`
-- 安装入口：`OpenEmbodiedAgent/scripts/deploy_rekep_real_plugin.py`
+- 驱动文件：`phyagentos_rekep_real_plugin/driver.py`
+- 档案文件：`phyagentos_rekep_real_plugin/profiles/rekep_real.md`
+- 主清单：`PhyAgentOS_plugin.toml`
+- 安装入口：`PhyAgentOS/scripts/deploy_rekep_real_plugin.py`
 
 ## 2.1 新机器人适配入口
 
@@ -29,7 +30,7 @@
 ### 启动方式
 
 ```bash
-python hal/hal_watchdog.py --driver rekep_real --workspace ~/.OEA/workspace
+python hal/hal_watchdog.py --driver rekep_real --workspace ~/.PhyAgentOS/workspace
 ```
 
 ## 3. 依赖安装（建议）
@@ -141,11 +142,11 @@ python runtime/dobot_bridge.py execute \
 
 ## 8. 第三方代码说明
 
-本目录仅收录真机链路的最小必要子集，未包含训练模型/数据等大体积资产。
+本目录仅收录真机链路的最小必要子集，未包含训练模型、数据等大体积资产。
 
 - 来自 Dobot XTrainer 生态代码的目录位于：
   - `third_party/dobot_xtrainer/`
   - `third_party/dobot_xtrainer_remote/`
 - 对应许可证与第三方许可清单已随目录保留（`LICENSE` / `THIRD-PARTY-LICENSES`）
 
-如需完整训练/数据采集栈，请在外部自行准备完整上游仓库。
+如需完整训练栈或数据采集栈，请在外部自行准备完整上游仓库。

@@ -4,12 +4,12 @@ import sys
 from pathlib import Path
 
 PLUGIN_REPO = Path(__file__).resolve().parent.parent
-OEA_REPO = PLUGIN_REPO.parent / "OpenEmbodiedAgent"
-for candidate in (PLUGIN_REPO, OEA_REPO):
+MAIN_REPO = PLUGIN_REPO.parent / "PhyAgentOS"
+for candidate in (PLUGIN_REPO, MAIN_REPO):
     if candidate.exists():
         sys.path.insert(0, str(candidate))
 
-from oea_rekep_real_plugin.driver import ReKepRealDriver
+from phyagentos_rekep_real_plugin.driver import ReKepRealDriver
 
 
 def test_real_action_alias_maps_to_bridge_action(monkeypatch):

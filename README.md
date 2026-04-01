@@ -1,8 +1,8 @@
-# OEA ReKep Real Plugin
+# PhyAgentOS ReKep Real Plugin
 
 English | [中文](README_zh.md)
 
-`oea-rekep-real-plugin` is an external HAL plugin for **OpenEmbodiedAgent (OEA)**. It adds real-world ReKep execution capability to OEA through the `rekep_real` driver, while keeping the OEA core repository clean and lightweight.
+`PhyAgentOS-rekep-real-plugin` is an external HAL plugin for **PhyAgentOS**. It adds real-world ReKep execution capability through the `rekep_real` driver while keeping the PhyAgentOS core repository clean and lightweight.
 
 This repository includes:
 
@@ -13,33 +13,33 @@ This repository includes:
 
 ## What This Plugin Provides
 
-- `rekep_real` driver for `hal/hal_watchdog.py`
+- the `rekep_real` driver for `hal/hal_watchdog.py`
 - real-world bridge entrypoints such as `preflight`, `execute`, `execute_background`, and `longrun_*`
 - support for Dobot/XTrainer runtime variants such as `xtrainer_zmq`, `xtrainer_sdk`, and `mock`
 - pluggable robot adaptation flow for new robot families
-- a plugin manifest that allows OEA to install and register this repository dynamically
+- `PhyAgentOS_plugin.toml` as the plugin manifest consumed by PhyAgentOS
 
 ## Requirements
 
-- OEA installed from the main `OpenEmbodiedAgent` repository
+- PhyAgentOS installed from the main `PhyAgentOS` repository
 - Python `>=3.11`
 - a dedicated Python or conda environment is recommended for the ReKep runtime
 - hardware-side dependencies as needed, such as RealSense and robot communication services
 
-## Install Into OEA
+## Install Into PhyAgentOS
 
-From the OEA repository root:
+From the PhyAgentOS repository root:
 
 ```bash
 python scripts/deploy_rekep_real_plugin.py \
-  --repo-url https://github.com/baiyu858/oea-rekep-real-plugin.git
+  --repo-url https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin.git
 ```
 
 To install optional solver dependencies as well:
 
 ```bash
 python scripts/deploy_rekep_real_plugin.py \
-  --repo-url https://github.com/baiyu858/oea-rekep-real-plugin.git \
+  --repo-url https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin.git \
   --with-solver
 ```
 
@@ -47,13 +47,13 @@ For local development, you can also install from a local checkout:
 
 ```bash
 python scripts/deploy_rekep_real_plugin.py \
-  --repo-url ../oea-rekep-real-plugin
+  --repo-url ../PhyAgentOS-rekep-real-plugin
 ```
 
-After installation, start OEA with the external driver:
+After installation, start PhyAgentOS with the external driver:
 
 ```bash
-python hal/hal_watchdog.py --driver rekep_real --workspace ~/.OEA/workspace
+python hal/hal_watchdog.py --driver rekep_real --workspace ~/.PhyAgentOS/workspace
 ```
 
 ## Local Secret Scanning
@@ -115,13 +115,13 @@ python runtime/dobot_bridge.py execute \
 
 ## Repository Layout
 
-- `oea_rekep_real_plugin/driver.py`: external HAL driver implementation
-- `oea_rekep_real_plugin/profiles/rekep_real.md`: embodiment profile installed by OEA
+- `phyagentos_rekep_real_plugin/driver.py`: external HAL driver implementation
+- `phyagentos_rekep_real_plugin/profiles/rekep_real.md`: embodiment profile installed by PhyAgentOS
 - `runtime/`: ReKep real-world runtime and bridge scripts
 - `runtime/third_party/`: bundled minimum third-party runtime dependencies
 - `runtime/docs/robot_adaptation.md`: robot adaptation guide in English
 - `runtime/docs/robot_adaptation_zh.md`: robot adaptation guide in Chinese
-- `oea_plugin.toml`: plugin manifest consumed by OEA
+- `PhyAgentOS_plugin.toml`: plugin manifest consumed by PhyAgentOS
 
 ## Adapting Another Robot
 
