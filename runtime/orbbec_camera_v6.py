@@ -374,9 +374,9 @@ class OrbbecCamera:
         if depth_frame is not None:
             depth_data = depth_frame.get_data()
             if depth_data is not None:
-                depth_image_mm = np.frombuffer(depth_data, dtype=np.uint16).reshape(
-                    (depth_frame.get_height(), depth_frame.get_width())
-                )
+                dh, dw = depth_frame.get_height(), depth_frame.get_width()
+                print(f"[DEBUG] get_images_from_frames: aligned depth frame = {dw}x{dh}")
+                depth_image_mm = np.frombuffer(depth_data, dtype=np.uint16).reshape((dh, dw))
         
         return color_image_bgr , depth_image_mm
 

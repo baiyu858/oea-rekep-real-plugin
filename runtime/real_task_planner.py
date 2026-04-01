@@ -985,6 +985,7 @@ def localize_schema_keypoints(image_path, depth_image, camera_calibration, keypo
     if image_bgr is not None:
         parsed_fixed = _parse_roi_xyxy(fixed_roi_raw)
         fixed_roi = _sanitize_roi_xyxy(parsed_fixed, image_bgr.shape[1], image_bgr.shape[0]) if parsed_fixed is not None else None
+    print(f"[DEBUG] fixed_roi_raw={fixed_roi_raw}, parsed_fixed={parsed_fixed}, fixed_roi={fixed_roi}, image_bgr.shape={image_bgr.shape if image_bgr is not None else None}")
 
     if fixed_roi is not None and image_bgr is not None:
         x0, y0, x1, y1 = fixed_roi
@@ -1006,7 +1007,9 @@ def localize_schema_keypoints(image_path, depth_image, camera_calibration, keypo
                     cv2.imwrite(str(focus_roi_debug_path), query_image_bgr)
                     focus_roi_debug_image = str(focus_roi_debug_path)
 
+    print(f"[DEBUG] before compute_depth_focus_roi: focus_roi={focus_roi}, auto_crop={auto_crop}, depth_image.shape={depth_image.shape}")
     if focus_roi is None and auto_crop:
+        print(f"[DEBUG] compute_depth_focus_roi: depth_image.shape={depth_image.shape}, image_bgr.shape={image_bgr.shape if image_bgr is not None else None}")
         roi_info = _compute_depth_focus_roi(
             depth_image,
             min_area_ratio=roi_min_area_ratio,

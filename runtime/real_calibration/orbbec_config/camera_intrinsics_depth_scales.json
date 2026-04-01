@@ -1,5 +1,0 @@
-{
-    "intrinsics": [],
-    "depth_scales": [],
-    "notes": "Orbbec intrinsics are automatically read from hardware. This file is a placeholder for multi-camera configurations."
-}

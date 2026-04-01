@@ -112,9 +112,18 @@ def parse_iso_ts(value):
         return None
 
 
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, (np.integer, np.floating)):
+            return o.item()
+        return super().default(o)
+
+
 def print_json(payload, pretty=False):
     indent = 2 if pretty else None
-    print(json.dumps(payload, ensure_ascii=False, indent=indent))
+    print(json.dumps(payload, ensure_ascii=False, indent=indent, cls=NumpyEncoder))
 
 
 def emit_progress(message):
@@ -772,7 +781,7 @@ def load_orbbec_intrinsics(calib_dir):
     calib_dir = Path(calib_dir)
 
     # Try to find specific calibration file
-    calib_files = list(calib_dir.glob("orbbec_calibration_*_latest.json"))
+    calib_files = list(calib_dir.glob("orbbec_calibration.json"))
     if calib_files:
         calib_file = calib_files[0]
     else:
@@ -798,8 +807,8 @@ def load_orbbec_intrinsics(calib_dir):
             "height": color.get("height", 720),
             "fx": color.get("fx", 0.0),
             "fy": color.get("fy", 0.0),
-            "cx": color.get("ppx", 0.0),
-            "cy": color.get("ppy", 0.0),
+            "cx": color.get("cx", color.get("ppx", 0.0)),
+            "cy": color.get("cy", color.get("ppy", 0.0)),
             "distortion_model": color.get("distortion_model") or color.get("model", "brown_conrady"),
             "distortion_coeffs": color.get("coeffs", [0.0, 0.0, 0.0, 0.0, 0.0]),
         },
@@ -808,8 +817,8 @@ def load_orbbec_intrinsics(calib_dir):
             "height": depth.get("height", 576),
             "fx": depth.get("fx", 0.0),
             "fy": depth.get("fy", 0.0),
-            "cx": depth.get("ppx", 0.0),
-            "cy": depth.get("ppy", 0.0),
+            "cx": depth.get("cx", depth.get("ppx", 0.0)),
+            "cy": depth.get("cy", depth.get("ppy", 0.0)),
             "distortion_model": depth.get("distortion_model") or depth.get("model", "brown_conrady"),
             "distortion_coeffs": depth.get("coeffs", [0.0, 0.0, 0.0, 0.0, 0.0]),
             "depth_scale": payload.get("depth_scale", 0.001),
@@ -1329,8 +1338,8 @@ def capture_orbbec_rgbd(camera_source, warmup_frames=6, timeout_s=8.0):
     try:
         # Initialize Orbbec camera with default settings
         camera = OrbbecCamera(
-            color_width=1280,
-            color_height=720,
+            color_width=1920,
+            color_height=1080,
             color_fps=30,
             depth_width=640,
             depth_height=576,
@@ -1355,7 +1364,8 @@ def capture_orbbec_rgbd(camera_source, warmup_frames=6, timeout_s=8.0):
         bgr_image, depth_image_mm = camera.get_images_from_frames(color_frame, depth_frame)
 
         # Convert BGR to RGB (ReKep expects RGB)
-        rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
+        # rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
+        rgb_image = bgr_image  # Keep as BGR for now, as ReKep can handle it and it avoids an extra conversion
 
         # Convert depth from mm to meters (float)
         depth_image = depth_image_mm.astype(np.float32) * 0.001
@@ -2888,6 +2898,7 @@ def _run_execute_rekep_vlm_stage_task(args, state_dir, preflight):
         camera_adapter=create_camera_adapter(hardware_profile=hardware_profile),
     )
     rgb0, depth0, planning_capture = env.capture_rgbd("execute_pen_planning", capture_realsense_rgbd)
+    print(f"[DEBUG] rgb0.shape={rgb0.shape}, depth0.shape={depth0.shape}")
     planning_frame_path = Path(planning_capture.frame_path)
     planning_depth_path = Path(planning_capture.depth_path)
     planning_capture_info = planning_capture.capture_info or {}

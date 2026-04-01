@@ -42,10 +42,10 @@ class FrankyAdapter(RobotAdapter):
         self._joint_state: list[float] = []
 
     def connect(self) -> Dict[str, Any]:
-        from franky import Robot
+        from franky import Robot,Gripper
 
         self._robot = Robot(self.host)
-        self._gripper = self._robot.gripper  # Gripper shares the same IP
+        self._gripper = Gripper(self.host)  # Gripper shares the same IP
         self._connected = True
         return {
             "ok": True,
@@ -178,23 +178,33 @@ class FrankyAdapter(RobotAdapter):
 
         self._robot.relative_dynamics_factor = 0.05
 
-        # pose format: [x, y, z, rx, ry, rz] (position + Euler angles)
-        # or [x, y, z, rx, ry, rz, rw] (position + quaternion)
+        # pose format: [x, y, z, rx, ry, rz] (position in mm + Euler angles in degrees)
+        # or [x, y, z, rx, ry, rz, rw] (position in mm + quaternion)
+
+        print(f"[DEBUG] Moving to pose: {pose[:3]} mm + {pose[3:]} angles")
         if len(pose) == 7:
-            # quaternion format
-            self._robot.move(CartesianMotion(Affine(pose[:3], pose[3:])))
+            # quaternion format: position in mm -> m
+            pos_m = [v / 1000.0 for v in pose[:3]]
+            self._robot.move(CartesianMotion(Affine(pos_m, pose[3:])))
         else:
-            # Euler angles - franky expects Affine with translation and rotation
-            # Euler xyz convention
+            # Euler angles: position in mm -> m, angles in degrees -> radians
             import math
             from scipy.spatial.transform import Rotation
 
-            x, y, z, rx, ry, rz = pose[:6]
-            quat = Rotation.from_euler("xyz", [rx, ry, rz]).as_quat()
+            x, y, z = [v / 1000.0 for v in pose[:3]]  # mm -> m
+            rx_deg, ry_deg, rz_deg = pose[3:6]
+            print(f"[DEBUG] position (m): {x}, {y}, {z}")
+            rx_rad = math.radians(rx_deg)
+            ry_rad = math.radians(ry_deg)
+            rz_rad = math.radians(rz_deg)
+            print(f"[DEBUG] rotation (rad): {rx_rad}, {ry_rad}, {rz_rad}")
+            quat = Rotation.from_euler("xyz", [rx_rad, ry_rad, rz_rad]).as_quat()
             affine = Affine([x, y, z], quat)
             self._robot.move(CartesianMotion(affine))
 
         self._tool_pose = [float(v) for v in pose[:7]] if len(pose) >= 7 else [float(v) for v in pose] + [0.0] * (7 - len(pose))
+        print(f"[DEBUG] Tool pose set to: {self._tool_pose}")
+
 
     def _execute_open_gripper(self, action: Dict[str, Any]) -> None:
         speed = float(action.get("speed", self.DEFAULT_GRIPPER_SPEED))

@@ -10,3 +10,4 @@ dist/
 *.egg-info/
 .pre-commit-cache/
 gitleaks-report*.json
+runtime/vlm_query/2026*
