@@ -1,0 +1,21 @@
+[plugin]
+name = "rekep_real"
+version = "0.1.0"
+description = "ReKep real-world execution plugin for PhyAgentOS"
+
+[driver]
+name = "rekep_real"
+module = "oea_rekep_real_plugin.driver"
+class = "ReKepRealDriver"
+profile_path = "oea_rekep_real_plugin/profiles/rekep_real.md"
+
+[python]
+sys_paths = ["."]
+
+[[requirements]]
+path = "runtime/requirements.rekep-extra.txt"
+optional = false
+
+[[requirements]]
+path = "runtime/requirements.rekep-optional.txt"
+optional = true
