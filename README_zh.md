@@ -1,8 +1,8 @@
-# OEA ReKep 真机插件
+# PhyAgentOS ReKep 真机插件
 
 [English](README.md) | 中文
 
-`oea-rekep-real-plugin` 是 **OpenEmbodiedAgent (OEA)** 的外部 HAL 插件仓库，用于为 OEA 提供 `rekep_real` 真机执行能力，同时保持 OEA 主仓库本身简洁、干净、易维护。
+`PhyAgentOS-rekep-real-plugin` 是 **PhyAgentOS** 的外部 HAL 插件仓库，用于提供 `rekep_real` 真机执行能力，同时保持 PhyAgentOS 主仓库本身简洁、干净、易维护。
 
 本仓库包含：
 
@@ -17,29 +17,29 @@
 - 提供 `preflight`、`execute`、`execute_background`、`longrun_*` 等真机 bridge 能力
 - 支持 `xtrainer_zmq`、`xtrainer_sdk`、`mock` 等运行形态
 - 支持扩展新的机器人 family
-- 提供 `oea_plugin.toml`，供 OEA 动态安装和注册
+- 提供 `PhyAgentOS_plugin.toml` 作为主插件清单
 
 ## 前置要求
 
-- 已安装 OEA 主仓库 `OpenEmbodiedAgent`
+- 已安装主仓库 `PhyAgentOS`
 - Python `>=3.11`
 - 建议为 ReKep 运行时单独准备 Python 或 conda 环境
 - 根据实际硬件准备 RealSense、机器人通讯服务等运行条件
 
-## 接入 OEA
+## 接入 PhyAgentOS
 
-进入 OEA 主仓库后执行：
+进入 PhyAgentOS 主仓库后执行：
 
 ```bash
 python scripts/deploy_rekep_real_plugin.py \
-  --repo-url https://github.com/baiyu858/oea-rekep-real-plugin.git
+  --repo-url https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin.git
 ```
 
 如果还要安装 solver 额外依赖：
 
 ```bash
 python scripts/deploy_rekep_real_plugin.py \
-  --repo-url https://github.com/baiyu858/oea-rekep-real-plugin.git \
+  --repo-url https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin.git \
   --with-solver
 ```
 
@@ -47,13 +47,13 @@ python scripts/deploy_rekep_real_plugin.py \
 
 ```bash
 python scripts/deploy_rekep_real_plugin.py \
-  --repo-url ../oea-rekep-real-plugin
+  --repo-url ../PhyAgentOS-rekep-real-plugin
 ```
 
-安装完成后，在 OEA 中启动：
+安装完成后，在 PhyAgentOS 中启动：
 
 ```bash
-python hal/hal_watchdog.py --driver rekep_real --workspace ~/.OEA/workspace
+python hal/hal_watchdog.py --driver rekep_real --workspace ~/.PhyAgentOS/workspace
 ```
 
 ## 本地泄密扫描
@@ -115,13 +115,13 @@ python runtime/dobot_bridge.py execute \
 
 ## 仓库结构
 
-- `oea_rekep_real_plugin/driver.py`：外部 HAL 驱动实现
-- `oea_rekep_real_plugin/profiles/rekep_real.md`：由 OEA 安装到工作区的本体档案
+- `phyagentos_rekep_real_plugin/driver.py`：外部 HAL 驱动实现
+- `phyagentos_rekep_real_plugin/profiles/rekep_real.md`：由 PhyAgentOS 安装到工作区的本体档案
 - `runtime/`：ReKep 真机运行时与 bridge 脚本
 - `runtime/third_party/`：随插件分发的最小第三方运行时代码
 - `runtime/docs/robot_adaptation.md`：英文适配文档
 - `runtime/docs/robot_adaptation_zh.md`：中文适配文档
-- `oea_plugin.toml`：供 OEA 读取的插件清单
+- `PhyAgentOS_plugin.toml`：供 PhyAgentOS 读取的主插件清单
 
 ## 新机器人适配
 

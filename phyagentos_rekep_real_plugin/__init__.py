@@ -1,4 +1,4 @@
-"""OpenEmbodiedAgent ReKep real-world plugin package."""
+"""PhyAgentOS ReKep real-world plugin package."""
 
 from .driver import ReKepRealDriver
 
