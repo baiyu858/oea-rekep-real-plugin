@@ -19,8 +19,10 @@ from subgoal_solver import SubgoalSolver
 from utils import get_config, get_linear_interpolation_steps, load_functions_from_txt
 
 # Right-arm safe zone adapted from dobot_xtrainer_remote/experiments/run_control.py.
-RIGHT_ARM_BOUNDS_MIN_M = np.array([-0.25, -0.75, 0.04], dtype=np.float64)
-RIGHT_ARM_BOUNDS_MAX_M = np.array([0.45, -0.16, 0.45], dtype=np.float64)
+# RIGHT_ARM_BOUNDS_MIN_M = np.array([-0.25, -0.75, 0.04], dtype=np.float64)
+# RIGHT_ARM_BOUNDS_MAX_M = np.array([0.45, -0.16, 0.45], dtype=np.float64)
+RIGHT_ARM_BOUNDS_MIN_M = np.array([-0.25, -0.50, -0.20], dtype=np.float64)                                                                                                  
+RIGHT_ARM_BOUNDS_MAX_M = np.array([1.00, 0.50, 0.40], dtype=np.float64)    
 LEFT_ARM_BOUNDS_MIN_M = np.array([-0.45, -0.75, 0.04], dtype=np.float64)
 LEFT_ARM_BOUNDS_MAX_M = np.array([0.30, -0.16, 0.45], dtype=np.float64)
 DEFAULT_REAL_GRASP_DEPTH_M = 0.03
@@ -250,7 +252,7 @@ def build_real_solver_config(*, arm: str = "right", grasp_depth_m: float = DEFAU
     config["path_solver"]["opt_rot_step_size"] = 0.60
     config["path_solver"]["opt_interpolate_pos_step_size"] = 0.03
     config["path_solver"]["opt_interpolate_rot_step_size"] = 0.18
-    config["keypoint_proposer"]["max_mask_ratio"] = 0.45
+    config["keypoint_proposer"]["max_mask_ratio"] = 0.25
     return config
 
 
@@ -543,6 +545,25 @@ def _execute_action_list(adapter, actions: List[Dict[str, Any]], *, execute_moti
     for idx, action in enumerate(actions, start=1):
         try:
             result = adapter.execute_action(action, execute_motion=bool(execute_motion))
+            if not result.get("ok", False):
+                error_msg = result.get("error", "unknown error")
+                emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] {action.get('type')} error: {error_msg}")
+                if hasattr(adapter, "recover_from_errors"):
+                    emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] attempting recovery...")
+                    recovery_result = adapter.recover_from_errors()
+                    if recovery_result.get("ok", False):
+                        emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] recovery succeeded, continuing...")
+                        records.append({"index": idx, "ok": False, "result": result, "action": action, "recovered": True})
+                        continue
+                    else:
+                        emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] recovery failed: {recovery_result.get('error', 'unknown')}")
+                        execution_error = error_msg
+                        records.append({"index": idx, "ok": False, "result": result, "action": action, "recovered": False})
+                        break
+                else:
+                    execution_error = error_msg
+                    records.append({"index": idx, "ok": False, "result": result, "action": action})
+                    break
             records.append({"index": idx, "ok": True, "result": result, "action": action})
             emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] {action.get('type')} ok")
             if bool(execute_motion) and float(action_interval_s) > 0.0 and idx < len(actions):
@@ -552,6 +573,17 @@ def _execute_action_list(adapter, actions: List[Dict[str, Any]], *, execute_moti
             records.append({"index": idx, "ok": False, "error": str(exc), "action": action})
             execution_error = str(exc)
             emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] {action.get('type')} failed: {exc}")
+            if hasattr(adapter, "recover_from_errors"):
+                emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] attempting recovery...")
+                try:
+                    recovery_result = adapter.recover_from_errors()
+                    if recovery_result.get("ok", False):
+                        emit_progress(f"[rekep-solver][stage={stage}] action[{idx}] recovery succeeded, continuing to next action...")
+                        continue
+                    else:
+                        emit_progress(f"[rekep-solver][stage={stage}] recovery failed: {recovery_result.get('error', 'unknown')}")
+                except Exception as recovery_exc:
+                    emit_progress(f"[rekep-solver][stage={stage}] recovery exception: {recovery_exc}")
             break
     return records, execution_error
 
@@ -765,6 +797,15 @@ def execute_solver_program(
         subgoal_constraints, path_constraints, constraint_debug = _sanitize_stage_constraints(stage_info, subgoal_constraints, path_constraints)
         is_grasp_stage = int(stage_info.get("grasp_keypoint", -1)) >= 0
         is_release_stage = int(stage_info.get("release_keypoint", -1)) >= 0
+
+        if is_grasp_stage:
+            grasp_keypoint = int(stage_info.get("grasp_keypoint", -1))
+            obj_id = int(ctx.rigid_group_ids[grasp_keypoint]) if grasp_keypoint < len(ctx.rigid_group_ids) else -1
+            print(f"[rekep-solver][stage={stage}] 准备抓取物体: obj {obj_id} (keypoint {grasp_keypoint})")
+        if is_release_stage:
+            release_keypoint = int(stage_info.get("release_keypoint", -1))
+            target_obj_id = int(ctx.rigid_group_ids[release_keypoint]) if release_keypoint < len(ctx.rigid_group_ids) else -1
+            print(f"[rekep-solver][stage={stage}] 释放目标物体: obj {target_obj_id} (keypoint {release_keypoint})")
 
         full_keypoints = ctx.full_keypoints()
         movable_mask = ctx.movable_mask()

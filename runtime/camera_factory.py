@@ -5,8 +5,10 @@ from typing import Any, Dict
 from camera_adapter import FunctionRgbdCameraAdapter, RgbdCameraAdapter
 from hardware_profile import HardwareProfile, coerce_hardware_profile
 from dobot_bridge import (
+    capture_orbbec_rgbd,
     capture_realsense_rgbd,
     capture_realsense_zmq_rgbd,
+    parse_orbbec_source,
     parse_realsense_source,
     parse_realsense_zmq_source,
 )
@@ -24,6 +26,8 @@ def create_camera_adapter(
         source = str(camera_source or "")
     if not source:
         return None
+    if parse_orbbec_source(source).get("enabled"):
+        return FunctionRgbdCameraAdapter(source=source, capture_fn=capture_orbbec_rgbd)
     if parse_realsense_source(source).get("enabled"):
         return FunctionRgbdCameraAdapter(source=source, capture_fn=capture_realsense_rgbd)
     if parse_realsense_zmq_source(source).get("enabled"):
