@@ -12,19 +12,6 @@
   - `xtrainer_sdk` (optional): local vendor SDK
   - `dashboard_tcp` / `mock` (debug only)
 
-## Franka (Franka Research 3) Connection Parameters
-
-当使用 Franka 机械臂时，需要配置以下参数：
-
-| 参数 | 值 | 说明 |
-|------|-----|------|
-| `robot_family` | `franky` | 机器人家族 |
-| `robot_driver` | `franka` | 驱动类型 |
-| `robot_host` | `172.16.0.2` | 机器人 IP 地址 |
-| `camera_source` | `orbbec` | 相机来源 |
-
-Agent 在生成动作时会从本文件读取这些参数，生成到 `ACTION.md` 中。
-
 ## Supported Actions
 
 | Action | Parameters | Description |

@@ -76,6 +76,10 @@ _STRING_ARGS: dict[str, str] = {
     "model": "--model",
     "job_id": "--job_id",
     "rekep_execution_mode": "--rekep_execution_mode",
+    # --- Franka (franky) 平台参数 ---
+    "robot_family": "--robot_family",
+    "robot_driver": "--robot_driver",
+    "robot_host": "--robot_host",
 }
 
 _NUMERIC_ARGS: dict[str, str] = {
