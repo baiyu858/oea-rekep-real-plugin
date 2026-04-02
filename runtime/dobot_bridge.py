@@ -91,7 +91,7 @@ DEFAULT_LONGRUN_MAX_MINUTES = 30.0
 DEFAULT_LONGRUN_MONITOR_INTERVAL_S = 2.0
 DEFAULT_LONGRUN_RETRY_LIMIT = 2
 DEFAULT_ACTION_INTERVAL_S = 3.0
-DEFAULT_REKEP_EXECUTION_MODE = "vlm_stage"
+DEFAULT_REKEP_EXECUTION_MODE = "solver"
 SUPPORTED_REKEP_EXECUTION_MODES = {"solver", "vlm_stage"}
 DEFAULT_REAL_GRASP_DEPTH_M = 0.03
 DEFAULT_REKEP_VLM_STAGE_GRASP_DESCEND_ENV = "REKEP_VLM_STAGE_GRASP_DESCEND_M"
@@ -1170,6 +1170,26 @@ def _capture_single_frame_realsense(camera_source, output_path, warmup_frames=6,
             pass
 
 
+def _capture_single_frame_orbbec(camera_source, output_path, warmup_frames=6, timeout_s=8.0):
+    source = parse_orbbec_source(camera_source)
+    if not source["enabled"]:
+        raise RuntimeError(f"Not an Orbbec source: {camera_source}")
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # capture_orbbec_rgbd 会初始化相机、预热、捕获帧
+    rgb_image, depth_image, capture_info = capture_orbbec_rgbd(
+        camera_source=camera_source,
+        warmup_frames=warmup_frames,
+        timeout_s=timeout_s,
+    )
+    # capture_orbbec_rgbd 返回的是 BGR 格式
+    if not cv2.imwrite(str(output_path), rgb_image):
+        raise RuntimeError(f"Failed to write frame image: {output_path}")
+    return output_path
+
+
 def _capture_single_frame_realsense_zmq(camera_source, output_path, warmup_frames=2, timeout_s=8.0):
     try:
         import zmq
@@ -1218,6 +1238,13 @@ def _capture_single_frame_realsense_zmq(camera_source, output_path, warmup_frame
 
 
 def capture_single_frame(camera_source, output_path, warmup_frames=6, timeout_s=8.0):
+    if parse_orbbec_source(camera_source)["enabled"]:
+        return _capture_single_frame_orbbec(
+            camera_source=camera_source,
+            output_path=output_path,
+            warmup_frames=warmup_frames,
+            timeout_s=timeout_s,
+        )
     if parse_realsense_zmq_source(camera_source)["enabled"]:
         return _capture_single_frame_realsense_zmq(
             camera_source=camera_source,
